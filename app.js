@@ -209,6 +209,10 @@ const upload_file_to_sharepoint = (data) => {
 };
 
 exports.handler = function(context, event, callback) {
+    if (event.FaxStatus === 'failed') {
+        callback('Fax status is failed, stop processing...');
+    }
+
     media_url = event.MediaUrl;
     fax_filename = date_format(new Date(), "UTC:yyyy-mm-dd-HH-MM-ss") + '-from-' + event.From.substring(2) + '-to-' + event.To.substring(2) + '.pdf';
     phone_number = event.To;
