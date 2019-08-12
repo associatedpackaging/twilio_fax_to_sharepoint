@@ -210,7 +210,8 @@ const upload_file_to_sharepoint = (data) => {
 
 exports.handler = function(context, event, callback) {
     if (event.FaxStatus === 'failed') {
-        callback('Fax status is failed, stop processing...');
+        // We do not want to recieve an error every time it is probably a soliciting call
+        callback(null, 'Fax status is failed, stop processing...');
     }
 
     media_url = event.MediaUrl;
