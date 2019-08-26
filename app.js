@@ -3,7 +3,9 @@ const date_format = require('dateformat');
 
 const office_365_tenant = 'my-company.onmicrosoft.com';
 const sharepoint_site_for_faxes = 'Site01';
+const sharepoint_site_id_for_faxes = '';
 const sharepoint_document_library_for_faxes = 'Incoming Faxes';
+const sharepoint_document_library_id_for_faxes = '';
 
 const graph_authentication_endpoint = 'https://login.microsoftonline.com/' + office_365_tenant + '/oauth2/v2.0/token';
 
@@ -57,71 +59,81 @@ const ms_graph_connect = () => {
 
 const get_sharepoint_site_id = (data) => {
     return new Promise(function(resolve, reject) {
-        request.get(
-            {
-                url:
-                    'https://graph.microsoft.com/v1.0/sites/' +
-                    office_365_tenant.split('.')[0] +
-                    '.sharepoint.com:/sites/' +
-                    sharepoint_site_for_faxes,
-                headers: {
-                    Authorization: 'Bearer ' + data.token
-                }
-            },
-            function(err, response, body) {
-                if (err) {
-                    reject(err);
-                } else if (response.statusCode !== 200) {
-                    reject(body);
-                } else {
-                    try {
-                        let parsed_body = JSON.parse(body);
-                        data.site_id = parsed_body.id;
-                        resolve(data);
-                    } catch (e) {
-                        reject(e);
+        if (sharepoint_site_id_for_faxes !== '') {
+			data.site_id = sharepoint_site_id_for_faxes;
+			resolve(data);
+		} else {
+            request.get(
+                {
+                    url:
+                        'https://graph.microsoft.com/v1.0/sites/' +
+                        office_365_tenant.split('.')[0] +
+                        '.sharepoint.com:/sites/' +
+                        sharepoint_site_for_faxes,
+                    headers: {
+                        Authorization: 'Bearer ' + data.token
+                    }
+                },
+                function(err, response, body) {
+                    if (err) {
+                        reject(err);
+                    } else if (response.statusCode !== 200) {
+                        reject(body);
+                    } else {
+                        try {
+                            let parsed_body = JSON.parse(body);
+                            data.site_id = parsed_body.id;
+                            resolve(data);
+                        } catch (e) {
+                            reject(e);
+                        }
                     }
                 }
-            }
-        );
+            );
+        }
     });
 };
 
 const get_sharepoint_drive_id = (data) => {
     return new Promise(function(resolve, reject) {
-        request.get(
-            {
-                url: 'https://graph.microsoft.com/v1.0/sites/' + data.site_id + '/drives',
-                headers: {
-                    Authorization: 'Bearer ' + data.token
-                }
-            },
-            function(err, response, body) {
-                if (err) {
-                    reject(err);
-                } else if (response.statusCode !== 200) {
-                    reject(body);
-                } else {
-                    try {
-                        let parsed_body = JSON.parse(body);
-                        parsed_body.value.forEach(function(drive) {
-                            if (
-                                drive.name === sharepoint_document_library_for_faxes &&
-                                drive.driveType === 'documentLibrary'
-                            ) {
-                                data.drive_id = drive.id;
-                                resolve(data);
-                            }
-                        });
-                        reject({
-                            error: 'Document library "' + sharepoint_document_library_for_faxes + '" not found.'
-                        });
-                    } catch (e) {
-                        reject(e);
+        if (sharepoint_document_library_id_for_faxes !== '') {
+			data.drive_id = sharepoint_document_library_id_for_faxes;
+			resolve(data);
+		} else {
+            request.get(
+                {
+                    url: 'https://graph.microsoft.com/v1.0/sites/' + data.site_id + '/drives',
+                    headers: {
+                        Authorization: 'Bearer ' + data.token
+                    }
+                },
+                function(err, response, body) {
+                    if (err) {
+                        reject(err);
+                    } else if (response.statusCode !== 200) {
+                        reject(body);
+                    } else {
+                        try {
+                            let parsed_body = JSON.parse(body);
+                            parsed_body.value.forEach(function(drive) {
+                                if (
+                                    drive.name === sharepoint_document_library_for_faxes &&
+                                    drive.driveType === 'documentLibrary'
+                                ) {
+                                    data.drive_id = drive.id;
+                                    resolve(data);
+                                }
+                            });
+                            reject({
+                                error: 'Document library "' + sharepoint_document_library_for_faxes + '" not found.'
+                            });
+                        } catch (e) {
+                            reject(e);
+                        }
                     }
                 }
-            }
-        );
+            );
+        }
     });
 };
 
